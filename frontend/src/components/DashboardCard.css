@@ -1,0 +1,47 @@
+.dashboard-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-icon {
+    font-size: 2.5rem;
+}
+
+.card-content h3 {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.card-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.dashboard-card.blue .card-value {
+    color: #4F46E5;
+}
+
+.dashboard-card.green .card-value {
+    color: #10B981;
+}
+
+.dashboard-card.purple .card-value {
+    color: #8B5CF6;
+}
+
+.dashboard-card.orange .card-value {
+    color: #F59E0B;
+}

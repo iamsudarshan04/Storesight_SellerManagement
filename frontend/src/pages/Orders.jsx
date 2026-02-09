@@ -1,90 +1,86 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { formatCurrency } from '../utils/formatCurrency';
+import axiosInstance from '../api/axios';
 import './Orders.css';
 
 const Orders = () => {
-    // Sample data - replace with API call later
-    const orders = [
-        { id: 'ORD-001', customer: 'John Doe', date: '2026-02-08', total: 2500, status: 'Completed' },
-        { id: 'ORD-002', customer: 'Jane Smith', date: '2026-02-08', total: 1800, status: 'Pending' },
-        { id: 'ORD-003', customer: 'Mike Johnson', date: '2026-02-07', total: 3200, status: 'Processing' },
-        { id: 'ORD-004', customer: 'Sarah Williams', date: '2026-02-07', total: 950, status: 'Completed' },
-        { id: 'ORD-005', customer: 'David Brown', date: '2026-02-06', total: 1500, status: 'Cancelled' },
-    ];
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
-    const getStatusClass = (status) => {
-        switch (status) {
-            case 'Completed':
-                return 'status-completed';
-            case 'Pending':
-                return 'status-pending';
-            case 'Processing':
-                return 'status-processing';
-            case 'Cancelled':
-                return 'status-cancelled';
-            default:
-                return '';
-        }
+    useEffect(() => {
+        const fetchOrders = async () => {
+            try {
+                const response = await axiosInstance.get('/sales');
+                // Transform sales data to match table structure if needed or use directly
+                // sales have: _id, productId (populated), quantitySold, totalAmount, date
+                setOrders(response.data);
+                setLoading(false);
+            } catch (err) {
+                console.error('Error fetching orders:', err);
+                setError('Failed to load orders');
+                setLoading(false);
+            }
+        };
+
+        fetchOrders();
+    }, []);
+
+    const handleRowClick = (id) => {
+        navigate(`/orders/${id}`);
     };
+
+    if (loading) return <div className="loading">Loading orders...</div>;
+    if (error) return <div className="error-message">{error}</div>;
 
     return (
         <div className="orders-page">
-            <div className="page-header">
-                <div>
-                    <h2>Orders Management</h2>
-                    <p>View and manage all customer orders</p>
-                </div>
-                <button className="btn-primary">+ New Order</button>
-            </div>
-
-            <div className="filters-bar">
-                <div className="filter-group">
-                    <input type="text" placeholder="Search orders..." className="search-filter" />
-                </div>
-                <div className="filter-group">
-                    <select className="status-filter">
-                        <option value="">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
-                    </select>
+            <div className="orders-header">
+                <h2>Recent Orders</h2>
+                <div className="orders-actions">
+                    <input type="text" placeholder="Search orders..." className="search-input" />
+                    <button className="btn-filter">Filter</button>
+                    <button className="btn-export">Export</button>
                 </div>
             </div>
 
-            <div className="orders-table-container">
-                <table className="orders-table">
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Date</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {orders.map((order) => (
-                            <tr key={order.id}>
-                                <td className="order-id">{order.id}</td>
-                                <td>{order.customer}</td>
-                                <td>{order.date}</td>
-                                <td className="order-total">₹{order.total.toLocaleString()}</td>
-                                <td>
-                                    <span className={`status-badge ${getStatusClass(order.status)}`}>
-                                        {order.status}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div className="action-buttons">
-                                        <button className="btn-icon" title="View">👁️</button>
-                                        <button className="btn-icon" title="Edit">✏️</button>
-                                        <button className="btn-icon" title="Delete">🗑️</button>
-                                    </div>
-                                </td>
+            <div className="table-container">
+                {orders.length === 0 ? (
+                    <div className="no-data">No orders found. Record a sale to see it here.</div>
+                ) : (
+                    <table className="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Product</th>
+                                <th>Date</th>
+                                <th>Quantity</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Action</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {orders.map((order) => (
+                                <tr key={order._id} onClick={() => handleRowClick(order._id)} className="clickable-row">
+                                    <td className="order-id">#{order._id.slice(-6).toUpperCase()}</td>
+                                    <td>{order.productId?.productName || 'Unknown Product'}</td>
+                                    <td>{new Date(order.date).toLocaleDateString()}</td>
+                                    <td>{order.quantitySold}</td>
+                                    <td className="amount-cell">{formatCurrency(order.totalAmount)}</td>
+                                    <td>
+                                        <span className="badge-success">Completed</span>
+                                    </td>
+                                    <td>
+                                        <button className="btn-icon" onClick={(e) => { e.stopPropagation(); /* Add explicit action handler here */ }}>⋮</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );

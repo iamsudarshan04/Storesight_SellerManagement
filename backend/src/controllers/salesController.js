@@ -1,6 +1,6 @@
 import Sale from '../models/Sale.js';
 import Product from '../models/Product.js';
-import { getTodaySales, getTotalRevenue, getBestSellingProducts, getLowStockProducts } from '../utils/calculateTotals.js';
+import { getTodaySales, getTotalRevenue, getBestSellingProducts, getLowStockProducts, getMonthlyRevenue, getTotalOrders } from '../utils/calculateTotals.js';
 
 // Record a sale
 export const recordSale = async (req, res) => {
@@ -54,11 +54,13 @@ export const getSalesSummary = async (req, res) => {
     try {
         const userId = req.userId;
 
-        const [todaySales, totalRevenue, bestSelling, lowStock] = await Promise.all([
+        const [todaySales, totalRevenue, bestSelling, lowStock, monthlyRevenue, totalOrders] = await Promise.all([
             getTodaySales(userId),
             getTotalRevenue(userId),
             getBestSellingProducts(userId),
-            getLowStockProducts(userId)
+            getLowStockProducts(userId),
+            getMonthlyRevenue(userId),
+            getTotalOrders(userId)
         ]);
 
         res.json({
@@ -67,6 +69,10 @@ export const getSalesSummary = async (req, res) => {
                 total: todaySales.total
             },
             totalRevenue,
+            monthlyRevenue,
+            totalOrders,
+            paidOrders: totalOrders, // Assuming all sales are paid as per current model
+            pendingOrders: 0,
             bestSellingProducts: bestSelling,
             lowStockProducts: lowStock.map(p => ({
                 id: p._id,
@@ -75,6 +81,36 @@ export const getSalesSummary = async (req, res) => {
                 lowStockLimit: p.lowStockLimit
             }))
         });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+// Get all sales (Orders)
+export const getAllSales = async (req, res) => {
+    try {
+        const sales = await Sale.find({ userId: req.userId })
+            .populate('productId', 'productName sellingPrice')
+            .sort({ date: -1 });
+
+        res.json(sales);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+// Get single sale details
+export const getSaleById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const sale = await Sale.findOne({ _id: id, userId: req.userId })
+            .populate('productId', 'productName sellingPrice costPrice');
+
+        if (!sale) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        res.json(sale);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }

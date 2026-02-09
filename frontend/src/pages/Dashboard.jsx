@@ -1,107 +1,138 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../api/axios';
 import DashboardCard from '../components/DashboardCard';
 import { formatCurrency } from '../utils/formatCurrency';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import axiosInstance from '../api/axios';
 import './Dashboard.css';
 
 const Dashboard = () => {
-    const [summary, setSummary] = useState(null);
+    const [metrics, setMetrics] = useState(null);
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetchSummary();
+        const fetchDashboardData = async () => {
+            try {
+                const response = await axiosInstance.get('/sales/summary');
+                const data = response.data;
+
+                // Transform backend data to match UI structure
+                setMetrics({
+                    revenue: {
+                        value: data.monthlyRevenue || 0,
+                        trend: { value: '0%', isPositive: true }, // Trends require historical data not yet available
+                    },
+                    orders: {
+                        value: data.totalOrders || 0,
+                        trend: { value: '0%', isPositive: true },
+                    },
+                    paid: {
+                        value: data.totalOrders > 0 ? '100%' : '0%', // Assuming all sales are paid
+                        pending: '0%',
+                        count: data.paidOrders,
+                        pendingCount: data.pendingOrders
+                    },
+                    lowStock: {
+                        count: data.lowStockProducts.length,
+                        items: data.lowStockProducts.map(p => p.name)
+                    },
+                    recentActivity: [] // Placeholder for now
+                });
+                setLoading(false);
+            } catch (err) {
+                console.error('Error fetching dashboard data:', err);
+                setError('Failed to load dashboard data');
+                setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
     }, []);
 
-    const fetchSummary = async () => {
-        try {
-            const response = await axiosInstance.get('/sales/summary');
-            setSummary(response.data);
-        } catch (error) {
-            console.error('Failed to fetch summary:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (loading) {
-        return <div className="loading">Loading dashboard...</div>;
-    }
+    if (loading) return <div className="loading">Loading dashboard...</div>;
+    if (error) return <div className="error-message">{error}</div>;
+    if (!metrics) return null;
 
     return (
         <div className="dashboard">
-
-
-            <div className="cards-grid">
+            <div className="dashboard-grid">
+                {/* 1. This Month Revenue */}
                 <DashboardCard
-                    title="Today's Sales"
-                    value={summary?.todaySales?.count || 0}
-                    icon="🛒"
+                    title="This Month Revenue"
+                    value={formatCurrency(metrics.revenue.value)}
+                    icon="💰"
+                    trend={metrics.revenue.trend}
                     color="blue"
                 />
 
+                {/* 2. Total Orders */}
                 <DashboardCard
-                    title="Today's Revenue"
-                    value={formatCurrency(summary?.todaySales?.total || 0)}
-                    icon="💰"
-                    color="green"
-                />
-
-                <DashboardCard
-                    title="Total Revenue"
-                    value={formatCurrency(summary?.totalRevenue || 0)}
-                    icon="📊"
+                    title="Total Orders"
+                    value={metrics.orders.value.toLocaleString()}
+                    icon="📦"
+                    trend={metrics.orders.trend}
                     color="purple"
                 />
 
-                <DashboardCard
-                    title="Low Stock Items"
-                    value={summary?.lowStockProducts?.length || 0}
-                    icon="⚠️"
-                    color="orange"
-                />
-            </div>
-
-            {summary?.bestSellingProducts && summary.bestSellingProducts.length > 0 && (
-                <div className="chart-section">
-                    <h2>Best Selling Products</h2>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={summary.bestSellingProducts}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="product" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="totalQuantity" fill="#4F46E5" name="Quantity Sold" />
-                            <Bar dataKey="totalRevenue" fill="#10B981" name="Revenue ($)" />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            )}
-
-            {summary?.lowStockProducts && summary.lowStockProducts.length > 0 && (
-                <div className="low-stock-section">
-                    <h2>⚠️ Low Stock Alert</h2>
-                    <div className="low-stock-list">
-                        {summary.lowStockProducts.map((product) => (
-                            <div key={product.id} className="low-stock-item">
-                                <span className="product-name">{product.name}</span>
-                                <span className="stock-info">
-                                    Stock: {product.quantity} / Limit: {product.lowStockLimit}
-                                </span>
-                                <button
-                                    className="btn-restock"
-                                    onClick={() => navigate('/products')}
-                                >
-                                    Restock
-                                </button>
+                {/* 3. Paid vs Pending */}
+                <div className="dashboard-card green">
+                    <div className="card-header">
+                        <span className="card-title">Payment Status</span>
+                        <div className="card-icon-wrapper green-icon">💳</div>
+                    </div>
+                    <div className="card-body">
+                        <h2 className="card-value">
+                            {metrics.paid.value}
+                            <span style={{ fontSize: '1rem', color: '#64748b', marginLeft: '8px' }}>Paid</span>
+                        </h2>
+                        <div className="progress-bar-container">
+                            <div className="progress-bar">
+                                <div className="progress-fill" style={{ width: metrics.paid.value }}></div>
                             </div>
-                        ))}
+                            <div className="progress-labels">
+                                <span>{metrics.paid.pending} Pending</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            )}
+
+                {/* 4. Low Stock Alert */}
+                <div className="dashboard-card orange">
+                    <div className="card-header">
+                        <span className="card-title">Low Stock Alert</span>
+                        <div className="card-icon-wrapper orange-icon">⚠️</div>
+                    </div>
+                    <div className="card-body">
+                        <h2 className="card-value" style={{ color: '#d97706' }}>{metrics.lowStock.count}</h2>
+                        <div className="low-stock-items">
+                            {metrics.lowStock.items.length > 0 ? (
+                                metrics.lowStock.items.slice(0, 3).map((item, index) => (
+                                    <span key={index} className="low-stock-chip">{item}</span>
+                                ))
+                            ) : (
+                                <span className="no-alert">No low stock items</span>
+                            )}
+                            {metrics.lowStock.items.length > 3 && (
+                                <span className="low-stock-chip">+{metrics.lowStock.items.length - 3} more</span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Recent Activity - Placeholder/Static for now as backend doesn't provide it yet */}
+            <div className="recent-activity-section">
+                <h3>Recent Activity</h3>
+                <div className="activity-list">
+                    <div className="activity-item">
+                        <div className="activity-icon blue-bg">🛒</div>
+                        <div className="activity-details">
+                            <h4>System Ready</h4>
+                            <p>Dashboard connected to live data</p>
+                        </div>
+                        <span className="activity-time">Just now</span>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

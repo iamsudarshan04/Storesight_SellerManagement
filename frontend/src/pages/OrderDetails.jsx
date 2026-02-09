@@ -1,32 +1,41 @@
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import axiosInstance from '../api/axios';
+import { formatCurrency } from '../utils/formatCurrency';
 import './OrderDetails.css';
 
 const OrderDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [order, setOrder] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Sample data - replace with API call later
-    const orderData = {
-        id: id || 'ORD-001',
-        customer: 'John Doe',
-        email: 'john.doe@example.com',
-        phone: '+91 98765 43210',
-        date: '2026-02-08',
-        status: 'Completed',
-        paymentMethod: 'Credit Card',
-        total: 2500,
-        items: [
-            { id: 1, product: 'Product A', quantity: 2, price: 800, total: 1600 },
-            { id: 2, product: 'Product B', quantity: 1, price: 900, total: 900 }
-        ],
-        timeline: [
-            { status: 'Order Placed', date: '2026-02-08 10:30 AM', completed: true },
-            { status: 'Payment Confirmed', date: '2026-02-08 10:32 AM', completed: true },
-            { status: 'Processing', date: '2026-02-08 11:00 AM', completed: true },
-            { status: 'Shipped', date: '2026-02-08 02:00 PM', completed: true },
-            { status: 'Delivered', date: '2026-02-09 10:00 AM', completed: true }
-        ]
-    };
+    useEffect(() => {
+        const fetchOrderDetails = async () => {
+            try {
+                const response = await axiosInstance.get(`/sales/${id}`);
+                setOrder(response.data);
+                setLoading(false);
+            } catch (err) {
+                console.error('Error fetching order details:', err);
+                setError('Failed to load order details');
+                setLoading(false);
+            }
+        };
+
+        if (id) {
+            fetchOrderDetails();
+        }
+    }, [id]);
+
+    if (loading) return <div className="loading">Loading details...</div>;
+    if (error) return <div className="error-message">{error}</div>;
+    if (!order) return <div className="error-message">Order not found</div>;
+
+    // Synthesize data not present in simple Sale model
+    const orderDate = new Date(order.date);
+    const formattedDate = orderDate.toLocaleDateString() + ' ' + orderDate.toLocaleTimeString();
 
     return (
         <div className="order-details-page">
@@ -34,7 +43,7 @@ const OrderDetails = () => {
                 <button className="btn-back" onClick={() => navigate('/orders')}>
                     ← Back to Orders
                 </button>
-                <h2>Order Details: {orderData.id}</h2>
+                <h2>Order Details: #{order._id.slice(-6).toUpperCase()}</h2>
             </div>
 
             <div className="details-grid">
@@ -44,15 +53,15 @@ const OrderDetails = () => {
                         <div className="info-grid">
                             <div className="info-item">
                                 <label>Name</label>
-                                <p>{orderData.customer}</p>
+                                <p>Walk-in Customer</p>
                             </div>
                             <div className="info-item">
                                 <label>Email</label>
-                                <p>{orderData.email}</p>
+                                <p>N/A</p>
                             </div>
                             <div className="info-item">
                                 <label>Phone</label>
-                                <p>{orderData.phone}</p>
+                                <p>N/A</p>
                             </div>
                         </div>
                     </div>
@@ -69,19 +78,17 @@ const OrderDetails = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {orderData.items.map(item => (
-                                    <tr key={item.id}>
-                                        <td>{item.product}</td>
-                                        <td>{item.quantity}</td>
-                                        <td>₹{item.price}</td>
-                                        <td>₹{item.total}</td>
-                                    </tr>
-                                ))}
+                                <tr>
+                                    <td>{order.productId?.productName || 'Unknown Product'}</td>
+                                    <td>{order.quantitySold}</td>
+                                    <td>{formatCurrency(order.productId?.sellingPrice || 0)}</td>
+                                    <td>{formatCurrency(order.totalAmount)}</td>
+                                </tr>
                             </tbody>
                             <tfoot>
                                 <tr>
                                     <td colSpan="3" className="total-label">Total Amount</td>
-                                    <td className="total-amount">₹{orderData.total}</td>
+                                    <td className="total-amount">{formatCurrency(order.totalAmount)}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -94,19 +101,19 @@ const OrderDetails = () => {
                         <div className="summary-items">
                             <div className="summary-item">
                                 <span>Order Date</span>
-                                <strong>{orderData.date}</strong>
+                                <strong>{orderDate.toLocaleDateString()}</strong>
                             </div>
                             <div className="summary-item">
                                 <span>Status</span>
-                                <span className="status-badge status-completed">{orderData.status}</span>
+                                <span className="status-badge status-completed">Completed</span>
                             </div>
                             <div className="summary-item">
                                 <span>Payment Method</span>
-                                <strong>{orderData.paymentMethod}</strong>
+                                <strong>Cash / UPI</strong>
                             </div>
                             <div className="summary-item">
                                 <span>Total</span>
-                                <strong className="total-price">₹{orderData.total}</strong>
+                                <strong className="total-price">{formatCurrency(order.totalAmount)}</strong>
                             </div>
                         </div>
                     </div>
@@ -114,15 +121,27 @@ const OrderDetails = () => {
                     <div className="section-card">
                         <h3>Order Timeline</h3>
                         <div className="timeline">
-                            {orderData.timeline.map((event, index) => (
-                                <div key={index} className={`timeline-item ${event.completed ? 'completed' : ''}`}>
-                                    <div className="timeline-marker"></div>
-                                    <div className="timeline-content">
-                                        <strong>{event.status}</strong>
-                                        <span>{event.date}</span>
-                                    </div>
+                            <div className="timeline-item completed">
+                                <div className="timeline-marker"></div>
+                                <div className="timeline-content">
+                                    <strong>Order Placed</strong>
+                                    <span>{formattedDate}</span>
                                 </div>
-                            ))}
+                            </div>
+                            <div className="timeline-item completed">
+                                <div className="timeline-marker"></div>
+                                <div className="timeline-content">
+                                    <strong>Payment Confirmed</strong>
+                                    <span>{formattedDate}</span>
+                                </div>
+                            </div>
+                            <div className="timeline-item completed">
+                                <div className="timeline-marker"></div>
+                                <div className="timeline-content">
+                                    <strong>Completed</strong>
+                                    <span>{formattedDate}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

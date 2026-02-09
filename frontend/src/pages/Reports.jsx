@@ -1,28 +1,43 @@
+import { useState, useEffect } from 'react';
+import axiosInstance from '../api/axios';
+import { formatCurrency } from '../utils/formatCurrency';
 import './Reports.css';
 
 const Reports = () => {
-    const reportCards = [
-        { title: 'Sales Report', description: 'View detailed sales analytics', icon: '📈', color: '#3b82f6' },
-        { title: 'Inventory Report', description: 'Stock levels and movements', icon: '📦', color: '#10b981' },
-        { title: 'Revenue Report', description: 'Income and expense analysis', icon: '💰', color: '#f59e0b' },
-        { title: 'Customer Report', description: 'Customer behavior insights', icon: '👥', color: '#8b5cf6' },
-    ];
+    const [monthlyReports, setMonthlyReports] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const recentReports = [
-        { name: 'Monthly Sales Report - January 2026', date: '2026-02-01', type: 'Sales', size: '2.4 MB' },
-        { name: 'Inventory Summary Q4 2025', date: '2026-01-15', type: 'Inventory', size: '1.8 MB' },
-        { name: 'Annual Revenue Report 2025', date: '2026-01-05', type: 'Revenue', size: '4.2 MB' },
-        { name: 'Customer Analysis Report', date: '2025-12-20', type: 'Customer', size: '3.1 MB' },
+    useEffect(() => {
+        const fetchReports = async () => {
+            try {
+                const response = await axiosInstance.get('/sales/monthly-reports');
+                setMonthlyReports(response.data);
+                setLoading(false);
+            } catch (err) {
+                console.error("Error fetching reports:", err);
+                setError("Failed to load reports");
+                setLoading(false);
+            }
+        };
+
+        fetchReports();
+    }, []);
+
+    const reportCards = [
+        { title: 'Sales Report', description: 'Your sales numbers', icon: '📈', color: '#3b82f6' },
+        { title: 'Inventory Report', description: 'What you have in stock', icon: '📦', color: '#10b981' },
+        { title: 'Revenue Report', description: 'Money in vs Money out', icon: '💰', color: '#f59e0b' },
+        { title: 'Customer Report', description: 'Who is buying', icon: '👥', color: '#8b5cf6' },
     ];
 
     return (
         <div className="reports-page">
             <div className="page-header">
                 <div>
-                    <h2>Reports & Analytics</h2>
-                    <p>Generate and view business reports</p>
+                    <h2>Business Insights</h2>
+                    <p>See how your business is doing</p>
                 </div>
-                <button className="btn-primary">+ Generate Report</button>
             </div>
 
             <div className="report-cards-grid">
@@ -66,21 +81,50 @@ const Reports = () => {
             </div>
 
             <div className="recent-reports-section">
-                <h3>Recent Reports</h3>
-                <div className="reports-list">
-                    {recentReports.map((report, index) => (
-                        <div key={index} className="report-item">
-                            <div className="report-icon">📄</div>
-                            <div className="report-info">
-                                <h4>{report.name}</h4>
-                                <p>{report.type} • {report.date} • {report.size}</p>
-                            </div>
-                            <div className="report-actions">
-                                <button className="btn-download">⬇️ Download</button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <h3>Monthly Breakdown</h3>
+                {loading ? (
+                    <div className="loading-state">Loading reports...</div>
+                ) : error ? (
+                    <div className="error-message">{error}</div>
+                ) : (
+                    <div className="reports-table-container">
+                        <table className="reports-table">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Total Sales</th>
+                                    <th>Orders</th>
+                                    <th>Returns</th>
+                                    <th>Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {monthlyReports.length > 0 ? (
+                                    monthlyReports.map((report, index) => (
+                                        <tr key={index}>
+                                            <td>{report.month}</td>
+                                            <td>{formatCurrency(report.grossSales)}</td>
+                                            <td>{report.totalOrders}</td>
+                                            <td>{formatCurrency(report.refunds)}</td>
+                                            <td style={{ color: '#10b981', fontWeight: '600' }}>
+                                                {formatCurrency(report.estimatedProfit)}
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="5" style={{ textAlign: 'center', padding: '3rem' }}>
+                                            <div style={{ color: '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                                                <span style={{ fontSize: '2rem' }}>📉</span>
+                                                <span style={{ fontWeight: '500' }}>No reports yet. Start selling to see your growth here!</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );

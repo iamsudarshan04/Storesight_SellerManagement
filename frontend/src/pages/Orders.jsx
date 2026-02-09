@@ -38,7 +38,7 @@ const Orders = () => {
     return (
         <div className="orders-page">
             <div className="orders-header">
-                <h2>Recent Orders</h2>
+                <h2>Your Orders</h2>
                 <div className="orders-actions">
                     <input type="text" placeholder="Search orders..." className="search-input" />
                     <button className="btn-filter">Filter</button>
@@ -48,16 +48,43 @@ const Orders = () => {
 
             <div className="table-container">
                 {orders.length === 0 ? (
-                    <div className="no-data">No orders found. Record a sale to see it here.</div>
+                    <div className="no-data" style={{
+                        padding: '3rem',
+                        textAlign: 'center',
+                        color: '#64748b',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '1rem'
+                    }}>
+                        <div style={{ fontSize: '3rem' }}>🛒</div>
+                        <h3>No orders yet!</h3>
+                        <p>Ready to make your first sale? Record it now.</p>
+                        <button
+                            className="btn-primary"
+                            onClick={() => navigate('/sales')}
+                            style={{
+                                background: '#3b82f6',
+                                color: 'white',
+                                padding: '0.75rem 1.5rem',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontWeight: '600'
+                            }}
+                        >
+                            Record First Sale
+                        </button>
+                    </div>
                 ) : (
                     <table className="orders-table">
                         <thead>
                             <tr>
-                                <th>Order ID</th>
-                                <th>Product</th>
+                                <th>Order #</th>
+                                <th>Item</th>
                                 <th>Date</th>
-                                <th>Quantity</th>
-                                <th>Amount</th>
+                                <th>Qty</th>
+                                <th>Total</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>

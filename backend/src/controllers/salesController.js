@@ -1,6 +1,6 @@
 import Sale from '../models/Sale.js';
 import Product from '../models/Product.js';
-import { getTodaySales, getTotalRevenue, getBestSellingProducts, getLowStockProducts, getMonthlyRevenue, getTotalOrders } from '../utils/calculateTotals.js';
+import { getTodaySales, getTotalRevenue, getBestSellingProducts, getLowStockProducts, getMonthlyRevenue, getTotalOrders, getMonthlyReport } from '../utils/calculateTotals.js';
 
 // Record a sale
 export const recordSale = async (req, res) => {
@@ -111,6 +111,51 @@ export const getSaleById = async (req, res) => {
         }
 
         res.json(sale);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+// Get monthly reports
+export const getMonthlyReportController = async (req, res) => {
+    try {
+        const report = await getMonthlyReport(req.userId);
+        res.json(report);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+// Cancel a sale
+export const cancelSale = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const sale = await Sale.findOne({ _id: id, userId: req.userId });
+
+        if (!sale) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        if (sale.status === 'cancelled') {
+            return res.status(400).json({ message: 'Order is already cancelled' });
+        }
+
+        // Restore stock
+        const product = await Product.findOne({ _id: sale.productId, userId: req.userId });
+
+        if (product) {
+            product.quantity += sale.quantitySold;
+            await product.save();
+        }
+
+        // Mark sale as cancelled
+        sale.status = 'cancelled';
+        await sale.save();
+
+        res.json({
+            message: 'Order cancelled successfully',
+            sale,
+            restoredStock: product ? product.quantity : null
+        });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }

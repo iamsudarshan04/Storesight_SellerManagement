@@ -36,6 +36,13 @@ const productSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
+}, {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+productSchema.virtual('isLowStock').get(function () {
+    return this.quantity <= this.lowStockLimit;
 });
 
 const Product = mongoose.model('Product', productSchema);

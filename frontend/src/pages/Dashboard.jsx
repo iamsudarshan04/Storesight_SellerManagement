@@ -57,7 +57,7 @@ const Dashboard = () => {
             <div className="dashboard-grid">
                 {/* 1. This Month Revenue */}
                 <DashboardCard
-                    title="This Month Revenue"
+                    title="Total Sales (This Month)"
                     value={formatCurrency(metrics.revenue.value)}
                     icon="💰"
                     trend={metrics.revenue.trend}
@@ -66,7 +66,7 @@ const Dashboard = () => {
 
                 {/* 2. Total Orders */}
                 <DashboardCard
-                    title="Total Orders"
+                    title="Orders Received"
                     value={metrics.orders.value.toLocaleString()}
                     icon="📦"
                     trend={metrics.orders.trend}
@@ -98,7 +98,7 @@ const Dashboard = () => {
                 {/* 4. Low Stock Alert */}
                 <div className="dashboard-card orange">
                     <div className="card-header">
-                        <span className="card-title">Low Stock Alert</span>
+                        <span className="card-title">Stock Warnings</span>
                         <div className="card-icon-wrapper orange-icon">⚠️</div>
                     </div>
                     <div className="card-body">
@@ -109,7 +109,7 @@ const Dashboard = () => {
                                     <span key={index} className="low-stock-chip">{item}</span>
                                 ))
                             ) : (
-                                <span className="no-alert">No low stock items</span>
+                                <span className="no-alert" style={{ color: '#10b981', fontWeight: '600' }}>Everything looks good! 🎉</span>
                             )}
                             {metrics.lowStock.items.length > 3 && (
                                 <span className="low-stock-chip">+{metrics.lowStock.items.length - 3} more</span>

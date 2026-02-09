@@ -9,7 +9,8 @@ export const getTodaySales = async (userId) => {
 
     const sales = await Sale.find({
         userId: new mongoose.Types.ObjectId(userId),
-        date: { $gte: today }
+        date: { $gte: today },
+        status: 'completed'
     });
 
     const total = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
@@ -18,7 +19,10 @@ export const getTodaySales = async (userId) => {
 
 // Calculate total revenue
 export const getTotalRevenue = async (userId) => {
-    const sales = await Sale.find({ userId: new mongoose.Types.ObjectId(userId) });
+    const sales = await Sale.find({
+        userId: new mongoose.Types.ObjectId(userId),
+        status: 'completed'
+    });
     const total = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     return total;
 };
@@ -31,7 +35,8 @@ export const getMonthlyRevenue = async (userId) => {
 
     const sales = await Sale.find({
         userId: new mongoose.Types.ObjectId(userId),
-        date: { $gte: startOfMonth }
+        date: { $gte: startOfMonth },
+        status: 'completed'
     });
 
     const total = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
@@ -40,14 +45,22 @@ export const getMonthlyRevenue = async (userId) => {
 
 // Calculate total orders
 export const getTotalOrders = async (userId) => {
-    const count = await Sale.countDocuments({ userId: new mongoose.Types.ObjectId(userId) });
+    const count = await Sale.countDocuments({
+        userId: new mongoose.Types.ObjectId(userId),
+        status: 'completed'
+    });
     return count;
 };
 
 // Get best selling products
 export const getBestSellingProducts = async (userId, limit = 5) => {
     const sales = await Sale.aggregate([
-        { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+        {
+            $match: {
+                userId: new mongoose.Types.ObjectId(userId),
+                status: 'completed'
+            }
+        },
         {
             $group: {
                 _id: '$productId',
@@ -76,6 +89,46 @@ export const getBestSellingProducts = async (userId, limit = 5) => {
 
 // Get low stock products
 export const getLowStockProducts = async (userId) => {
-    const products = await Product.find({ userId: new mongoose.Types.ObjectId(userId) });
-    return products.filter(p => p.quantity <= p.lowStockLimit);
+    const products = await Product.find({
+        userId: new mongoose.Types.ObjectId(userId),
+        $expr: { $lte: ["$quantity", "$lowStockLimit"] }
+    });
+    return products;
+};
+
+// Generate monthly report
+export const getMonthlyReport = async (userId) => {
+    const sales = await Sale.find({
+        userId: new mongoose.Types.ObjectId(userId),
+        status: 'completed'
+    })
+        .populate('productId');
+
+    const monthlyData = {};
+
+    sales.forEach(sale => {
+        const date = new Date(sale.date);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+        if (!monthlyData[monthKey]) {
+            monthlyData[monthKey] = {
+                month: monthKey,
+                grossSales: 0,
+                totalOrders: 0,
+                refunds: 0,
+                estimatedProfit: 0
+            };
+        }
+
+        monthlyData[monthKey].grossSales += sale.totalAmount;
+        monthlyData[monthKey].totalOrders += 1;
+
+        if (sale.productId) {
+            const cost = sale.productId.costPrice * sale.quantitySold;
+            const profit = sale.totalAmount - cost;
+            monthlyData[monthKey].estimatedProfit += profit;
+        }
+    });
+
+    return Object.values(monthlyData).sort((a, b) => b.month.localeCompare(a.month));
 };

@@ -27,8 +27,26 @@ const saleSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['completed', 'cancelled'],
-        default: 'completed'
+        enum: ['New', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
+        default: 'New'
+    },
+    customerName: {
+        type: String,
+        required: [true, 'Customer name is required']
+    },
+    phoneNumber: {
+        type: String,
+        required: false
+    },
+    paymentMethod: {
+        type: String,
+        enum: ['UPI', 'COD', 'Bank Transfer'],
+        required: [true, 'Payment method is required']
+    },
+    paymentStatus: {
+        type: String,
+        enum: ['Paid', 'Pending'],
+        default: 'Pending'
     }
 });
 

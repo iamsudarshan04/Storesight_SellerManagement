@@ -87,6 +87,16 @@
 .status.low {
     background-color: #FEE2E2;
     color: #DC2626;
+    font-weight: 700;
+    border: 1px solid #fecaca;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.status.low::before {
+    content: "⚠️";
+    font-size: 0.8rem;
 }
 
 .actions {

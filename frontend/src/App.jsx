@@ -11,6 +11,7 @@ import Products from './pages/Products';
 import Sales from './pages/Sales';
 import Orders from './pages/Orders';
 import OrderDetails from './pages/OrderDetails';
+import AddOrder from './pages/AddOrder';
 import Inventory from './pages/Inventory';
 import Payments from './pages/Payments';
 import Reports from './pages/Reports';
@@ -49,6 +50,14 @@ function App() {
                             <ProtectedRoute>
                                 <MainLayout pageTitle="Orders">
                                     <Orders />
+                                </MainLayout>
+                            </ProtectedRoute>
+                        } />
+
+                        <Route path="/orders/add" element={
+                            <ProtectedRoute>
+                                <MainLayout pageTitle="Add Order">
+                                    <AddOrder />
                                 </MainLayout>
                             </ProtectedRoute>
                         } />

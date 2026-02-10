@@ -5,7 +5,7 @@ import { getTodaySales, getTotalRevenue, getBestSellingProducts, getLowStockProd
 // Record a sale
 export const recordSale = async (req, res) => {
     try {
-        const { productId, quantitySold } = req.body;
+        const { productId, quantitySold, customerName, phoneNumber, paymentMethod, paymentStatus } = req.body;
 
         // Find product
         const product = await Product.findOne({ _id: productId, userId: req.userId });
@@ -30,7 +30,11 @@ export const recordSale = async (req, res) => {
             productId,
             quantitySold,
             totalAmount,
-            userId: req.userId
+            userId: req.userId,
+            customerName,
+            phoneNumber,
+            paymentMethod,
+            paymentStatus: paymentStatus || 'Pending'
         });
 
         await sale.save();
@@ -111,7 +115,7 @@ export const getSaleById = async (req, res) => {
         }
 
         res.json(sale);
-    } catch (error) {
+        } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
@@ -155,6 +159,29 @@ export const cancelSale = async (req, res) => {
             message: 'Order cancelled successfully',
             sale,
             restoredStock: product ? product.quantity : null
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+// Update payment status (Toggle Paid/Pending)
+export const updatePaymentStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { paymentStatus } = req.body;
+
+        const sale = await Sale.findOne({ _id: id, userId: req.userId });
+
+        if (!sale) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        sale.paymentStatus = paymentStatus;
+        await sale.save();
+
+        res.json({
+            message: 'Payment status updated successfully',
+            sale
         });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });

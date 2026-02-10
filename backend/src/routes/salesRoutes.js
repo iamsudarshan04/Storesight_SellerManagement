@@ -1,5 +1,5 @@
 import express from 'express';
-import { recordSale, getSalesSummary, getAllSales, getSaleById, getMonthlyReportController, cancelSale } from '../controllers/salesController.js';
+import { recordSale, getSalesSummary, getAllSales, getSaleById, getMonthlyReportController, cancelSale, updatePaymentStatus } from '../controllers/salesController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -24,5 +24,8 @@ router.get('/:id', getSaleById);
 
 // POST /api/sales/:id/cancel - Cancel a sale (order)
 router.post('/:id/cancel', cancelSale);
+
+// PATCH /api/sales/:id/payment-status - Update payment status
+router.patch('/:id/payment-status', updatePaymentStatus);
 
 export default router;

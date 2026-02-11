@@ -8,9 +8,13 @@ export const register = async (req, res) => {
         console.log('Registration request received:', req.body);
         const { name, email, password } = req.body;
 
+        if (!email || !password) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
         // Check if user already exists
         console.log('Checking for existing user...');
-        const existingUser = await User.findOne({ email });
+        const normalizedEmail = email.toLowerCase();
+        const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
             console.log('User already exists');
             return res.status(400).json({ message: 'User already exists' });
@@ -18,7 +22,7 @@ export const register = async (req, res) => {
 
         // Create new user
         console.log('Creating new user...');
-        const user = new User({ name, email, password });
+        const user = new User({ name, email: normalizedEmail, password });
 
         console.log('Saving user to database...');
         await user.save();
@@ -50,15 +54,24 @@ export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        if (!email || !password) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+
+        // Normalize email
+        const normalizedEmail = email.toLowerCase();
+
         // Find user by email
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: normalizedEmail });
         if (!user) {
+            console.log('Login failed: User not found for email:', normalizedEmail);
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
         // Check password
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
+            console.log('Login failed: Invalid password for user:', normalizedEmail);
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 

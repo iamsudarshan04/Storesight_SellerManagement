@@ -75,7 +75,23 @@ const AddOrder = () => {
             navigate('/orders');
         } catch (error) {
             console.error('Error creating order:', error);
-            setError(error.response?.data?.message || 'Failed to create order');
+            console.error('Error response:', error.response?.data);
+
+            let errorMessage = 'Failed to create order';
+
+            if (error.response?.data?.error) {
+                errorMessage = error.response.data.error;
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+
+            // Show validation errors if present
+            if (error.response?.data?.details) {
+                console.error('Validation errors:', error.response.data.details);
+                errorMessage += ' - Check console for details';
+            }
+
+            setError(errorMessage);
             setSubmitting(false);
         }
     };

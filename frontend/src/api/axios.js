@@ -5,7 +5,8 @@ const axiosInstance = axios.create({
     headers: {
         'Content-Type': 'application/json'
     },
-    withCredentials: true
+    // Only use credentials in production (when VITE_API_URL is set)
+    withCredentials: !!import.meta.env.VITE_API_URL
 });
 
 // Debug: Log the base URL being used

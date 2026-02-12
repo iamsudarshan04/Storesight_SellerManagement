@@ -7,6 +7,10 @@ const Sales = () => {
     const [products, setProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState('');
     const [quantitySold, setQuantitySold] = useState('');
+    const [customerName, setCustomerName] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('UPI');
+    const [paymentStatus, setPaymentStatus] = useState('Pending');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -31,7 +35,11 @@ const Sales = () => {
         try {
             const response = await axiosInstance.post('/sales', {
                 productId: selectedProduct,
-                quantitySold: parseInt(quantitySold)
+                quantitySold: parseInt(quantitySold),
+                customerName,
+                phoneNumber,
+                paymentMethod,
+                paymentStatus
             });
 
             setMessage({
@@ -42,6 +50,10 @@ const Sales = () => {
             // Reset form
             setSelectedProduct('');
             setQuantitySold('');
+            setCustomerName('');
+            setPhoneNumber('');
+            setPaymentMethod('UPI');
+            setPaymentStatus('Pending');
 
             // Refresh products to update stock
             fetchProducts();
@@ -83,6 +95,29 @@ const Sales = () => {
 
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
+                            <label htmlFor="customerName">Customer Name *</label>
+                            <input
+                                type="text"
+                                id="customerName"
+                                value={customerName}
+                                onChange={(e) => setCustomerName(e.target.value)}
+                                placeholder="Enter customer name"
+                                required
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="phoneNumber">Phone Number (Optional)</label>
+                            <input
+                                type="tel"
+                                id="phoneNumber"
+                                value={phoneNumber}
+                                onChange={(e) => setPhoneNumber(e.target.value)}
+                                placeholder="Enter phone number"
+                            />
+                        </div>
+
+                        <div className="form-group">
                             <label htmlFor="product">Select Product</label>
                             <select
                                 id="product"
@@ -110,6 +145,33 @@ const Sales = () => {
                                 max={productDetails?.stock || 999999}
                                 required
                             />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="paymentMethod">Payment Method</label>
+                            <select
+                                id="paymentMethod"
+                                value={paymentMethod}
+                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                required
+                            >
+                                <option value="UPI">UPI</option>
+                                <option value="COD">COD</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="paymentStatus">Payment Status</label>
+                            <select
+                                id="paymentStatus"
+                                value={paymentStatus}
+                                onChange={(e) => setPaymentStatus(e.target.value)}
+                                required
+                            >
+                                <option value="Pending">Pending</option>
+                                <option value="Paid">Paid</option>
+                            </select>
                         </div>
 
                         {productDetails && quantitySold && (

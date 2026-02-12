@@ -61,15 +61,20 @@ const AddOrder = () => {
         setSubmitting(true);
         setError('');
 
+        const requestData = {
+            productId: formData.productId,
+            quantitySold: Number(formData.quantity),
+            customerName: formData.customerName,
+            phoneNumber: formData.phoneNumber,
+            paymentMethod: formData.paymentMethod,
+            paymentStatus: formData.paymentStatus
+        };
+
+        console.log('🚀 Sending sale data:', requestData);
+
         try {
-            await axiosInstance.post('/sales', {
-                productId: formData.productId,
-                quantitySold: Number(formData.quantity),
-                customerName: formData.customerName,
-                phoneNumber: formData.phoneNumber,
-                paymentMethod: formData.paymentMethod,
-                paymentStatus: formData.paymentStatus
-            });
+            const response = await axiosInstance.post('/sales', requestData);
+            console.log('✅ Sale created:', response.data);
 
             // Success - navigate back to orders immediately
             navigate('/orders');

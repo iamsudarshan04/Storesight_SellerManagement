@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>API Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        .test-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 StoreSight API Connection Test</h1>
+
+    <div id="config" class="test-result info">
+        <h3>Configuration:</h3>
+        <p><strong>VITE_API_URL:</strong> <span id="apiUrl">Loading...</span></p>
+        <p><strong>Current Origin:</strong> <span id="origin">Loading...</span></p>
+    </div>
+
+    <button onclick="testBackendHealth()">Test Backend Health</button>
+    <button onclick="testLogin()">Test Login Endpoint</button>
+
+    <div id="results"></div>
+
+    <script type="module">
+        // Display config
+        document.getElementById('apiUrl').textContent = import.meta.env.VITE_API_URL || 'NOT SET (using /api)';
+        document.getElementById('origin').textContent = window.location.origin;
+
+        window.testBackendHealth = async function () {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="test-result info">Testing backend health...</div>';
+
+            const backendUrl = import.meta.env.VITE_API_URL || '/api';
+            const testUrl = backendUrl.replace('/api', ''); // Remove /api to test root
+
+            try {
+                const response = await fetch(testUrl);
+                const data = await response.json();
+
+                resultsDiv.innerHTML = `
+                    <div class="test-result success">
+                        <h3>✅ Backend Health Check PASSED</h3>
+                        <p><strong>URL:</strong> ${testUrl}</p>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="test-result error">
+                        <h3>❌ Backend Health Check FAILED</h3>
+                        <p><strong>URL:</strong> ${testUrl}</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>This means your backend is not accessible from this frontend.</p>
+                    </div>
+                `;
+            }
+        };
+
+        window.testLogin = async function () {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="test-result info">Testing login endpoint...</div>';
+
+            const backendUrl = import.meta.env.VITE_API_URL || '/api';
+            const loginUrl = backendUrl + '/auth/login';
+
+            try {
+                const response = await fetch(loginUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'testpassword'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.status === 404) {
+                    resultsDiv.innerHTML = `
+                        <div class="test-result error">
+                            <h3>❌ Login Endpoint NOT FOUND (404)</h3>
+                            <p><strong>URL:</strong> ${loginUrl}</p>
+                            <p><strong>This means:</strong></p>
+                            <ul>
+                                <li>Your VITE_API_URL is pointing to the wrong backend URL, OR</li>
+                                <li>Your backend is not deployed/running, OR</li>
+                                <li>Your backend routes are not set up correctly</li>
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="test-result ${response.ok ? 'success' : 'info'}">
+                            <h3>${response.ok ? '✅' : 'ℹ️'} Login Endpoint Found</h3>
+                            <p><strong>URL:</strong> ${loginUrl}</p>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                            <p>The endpoint exists! The credentials are wrong (expected), but the route works.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="test-result error">
+                        <h3>❌ Login Test FAILED</h3>
+                        <p><strong>URL:</strong> ${loginUrl}</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        };
+    </script>
+</body>
+
+</html>

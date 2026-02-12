@@ -7,15 +7,22 @@ export const recordSale = async (req, res) => {
     try {
         const { productId, quantitySold, customerName, phoneNumber, paymentMethod, paymentStatus } = req.body;
 
+        // Log incoming request for debugging
+        console.log('📝 Recording sale:', { productId, quantitySold, customerName, phoneNumber, paymentMethod, paymentStatus, userId: req.userId });
+
         // Find product
         const product = await Product.findOne({ _id: productId, userId: req.userId });
 
         if (!product) {
+            console.log('❌ Product not found:', productId);
             return res.status(404).json({ message: 'Product not found' });
         }
 
+        console.log('✅ Product found:', product.productName);
+
         // Check stock availability
         if (product.quantity < quantitySold) {
+            console.log('❌ Insufficient stock:', { available: product.quantity, requested: quantitySold });
             return res.status(400).json({
                 message: 'Insufficient stock',
                 available: product.quantity
@@ -37,11 +44,14 @@ export const recordSale = async (req, res) => {
             paymentStatus: paymentStatus || 'Pending'
         });
 
+        console.log('💾 Saving sale...');
         await sale.save();
+        console.log('✅ Sale saved successfully');
 
         // Update product quantity
         product.quantity -= quantitySold;
         await product.save();
+        console.log('✅ Product quantity updated');
 
         res.status(201).json({
             message: 'Sale recorded successfully',
@@ -49,7 +59,17 @@ export const recordSale = async (req, res) => {
             remainingStock: product.quantity
         });
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        console.error('❌ Error recording sale:', error);
+        console.error('Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        });
+        res.status(500).json({
+            message: 'Server error',
+            error: error.message,
+            details: error.name === 'ValidationError' ? error.errors : undefined
+        });
     }
 };
 
@@ -115,7 +135,7 @@ export const getSaleById = async (req, res) => {
         }
 
         res.json(sale);
-        } catch (error) {
+    } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };

@@ -106,6 +106,7 @@ export const getSalesSummary = async (req, res) => {
             }))
         });
     } catch (error) {
+        console.error('getSalesSummary error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
@@ -159,7 +160,7 @@ export const cancelSale = async (req, res) => {
             return res.status(404).json({ message: 'Order not found' });
         }
 
-        if (sale.status === 'cancelled') {
+        if (sale.status === 'Cancelled') {
             return res.status(400).json({ message: 'Order is already cancelled' });
         }
 
@@ -172,7 +173,7 @@ export const cancelSale = async (req, res) => {
         }
 
         // Mark sale as cancelled
-        sale.status = 'cancelled';
+        sale.status = 'Cancelled';
         await sale.save();
 
         res.json({

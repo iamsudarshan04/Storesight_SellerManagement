@@ -1,106 +1,102 @@
 import Sale from '../models/Sale.js';
 import Product from '../models/Product.js';
-import mongoose from 'mongoose';
 
-// Calculate today's sales
+// Calculate today's sales (exclude cancelled)
 export const getTodaySales = async (userId) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const sales = await Sale.find({
-        userId: new mongoose.Types.ObjectId(userId),
+        userId: userId,
         date: { $gte: today },
-        status: 'completed'
+        status: { $ne: 'Cancelled' }
     });
 
     const total = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     return { count: sales.length, total };
 };
 
-// Calculate total revenue
+// Calculate total revenue (exclude cancelled)
 export const getTotalRevenue = async (userId) => {
     const sales = await Sale.find({
-        userId: new mongoose.Types.ObjectId(userId),
-        status: 'completed'
+        userId: userId,
+        status: { $ne: 'Cancelled' }
     });
     const total = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     return total;
 };
 
-// Calculate monthly revenue
+// Calculate monthly revenue (exclude cancelled)
 export const getMonthlyRevenue = async (userId) => {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
     const sales = await Sale.find({
-        userId: new mongoose.Types.ObjectId(userId),
+        userId: userId,
         date: { $gte: startOfMonth },
-        status: 'completed'
+        status: { $ne: 'Cancelled' }
     });
 
     const total = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     return total;
 };
 
-// Calculate total orders
+// Calculate total orders (exclude cancelled)
 export const getTotalOrders = async (userId) => {
     const count = await Sale.countDocuments({
-        userId: new mongoose.Types.ObjectId(userId),
-        status: 'completed'
+        userId: userId,
+        status: { $ne: 'Cancelled' }
     });
     return count;
 };
 
-// Get best selling products
+// Get best selling products (exclude cancelled)
 export const getBestSellingProducts = async (userId, limit = 5) => {
-    const sales = await Sale.aggregate([
-        {
-            $match: {
-                userId: new mongoose.Types.ObjectId(userId),
-                status: 'completed'
-            }
-        },
-        {
-            $group: {
-                _id: '$productId',
-                totalQuantity: { $sum: '$quantitySold' },
-                totalRevenue: { $sum: '$totalAmount' }
-            }
-        },
-        { $sort: { totalQuantity: -1 } },
-        { $limit: limit }
-    ]);
+    try {
+        const sales = await Sale.find({
+            userId: userId,
+            status: { $ne: 'Cancelled' }
+        }).populate('productId', 'productName');
 
-    // Populate product details
-    const productsWithDetails = await Promise.all(
-        sales.map(async (sale) => {
-            const product = await Product.findById(sale._id);
-            return {
-                product: product?.productName || 'Unknown',
-                totalQuantity: sale.totalQuantity,
-                totalRevenue: sale.totalRevenue
-            };
-        })
-    );
+        // Group manually instead of using aggregate (avoids ObjectId casting issues)
+        const productMap = {};
+        sales.forEach(sale => {
+            const pid = sale.productId?._id?.toString() || 'unknown';
+            if (!productMap[pid]) {
+                productMap[pid] = {
+                    product: sale.productId?.productName || 'Unknown',
+                    totalQuantity: 0,
+                    totalRevenue: 0
+                };
+            }
+            productMap[pid].totalQuantity += sale.quantitySold;
+            productMap[pid].totalRevenue += sale.totalAmount;
+        });
 
-    return productsWithDetails;
+        return Object.values(productMap)
+            .sort((a, b) => b.totalQuantity - a.totalQuantity)
+            .slice(0, limit);
+    } catch (error) {
+        console.error('Error in getBestSellingProducts:', error);
+        return [];
+    }
 };
 
 // Get low stock products
 export const getLowStockProducts = async (userId) => {
     const products = await Product.find({
-        userId: new mongoose.Types.ObjectId(userId),
-        $expr: { $lte: ["$quantity", "$lowStockLimit"] }
+        userId: userId
     });
-    return products;
+    // Filter in JS to avoid $expr issues
+    return products.filter(p => p.quantity <= p.lowStockLimit);
 };
 
-// Generate monthly report
+// Generate monthly report (exclude cancelled)
 export const getMonthlyReport = async (userId) => {
     const sales = await Sale.find({
-        userId: new mongoose.Types.ObjectId(userId),
-        status: 'completed'
+        userId: userId,
+        status: { $ne: 'Cancelled' }
     })
         .populate('productId');
 
@@ -116,12 +112,28 @@ export const getMonthlyReport = async (userId) => {
                 grossSales: 0,
                 totalOrders: 0,
                 refunds: 0,
-                estimatedProfit: 0
+                estimatedProfit: 0,
+                paidAmount: 0,
+                pendingAmount: 0,
+                unitsSold: 0,
+                paymentMethods: {}
             };
         }
 
         monthlyData[monthKey].grossSales += sale.totalAmount;
         monthlyData[monthKey].totalOrders += 1;
+        monthlyData[monthKey].unitsSold += sale.quantitySold;
+
+        // Track paid vs pending
+        if (sale.paymentStatus === 'Paid') {
+            monthlyData[monthKey].paidAmount += sale.totalAmount;
+        } else {
+            monthlyData[monthKey].pendingAmount += sale.totalAmount;
+        }
+
+        // Track payment methods
+        const method = sale.paymentMethod || 'Other';
+        monthlyData[monthKey].paymentMethods[method] = (monthlyData[monthKey].paymentMethods[method] || 0) + 1;
 
         if (sale.productId) {
             const cost = sale.productId.costPrice * sale.quantitySold;

@@ -3,6 +3,7 @@ import cors from 'cors';
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import salesRoutes from './routes/salesRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sales', salesRoutes);
+app.use('/api/user', userRoutes);
 
 // Health check
 app.get('/', (req, res) => {

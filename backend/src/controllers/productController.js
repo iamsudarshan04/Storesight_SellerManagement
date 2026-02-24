@@ -69,6 +69,47 @@ export const updateProduct = async (req, res) => {
     }
 };
 
+// Update stock quantity (quick stock adjustment)
+export const updateStock = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { quantity, action = 'set' } = req.body;
+
+        if (quantity === undefined || quantity === null) {
+            return res.status(400).json({ message: 'Quantity is required' });
+        }
+
+        const product = await Product.findOne({ _id: id, userId: req.userId });
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // action: 'set' = set to exact quantity, 'add' = add to current, 'subtract' = subtract from current
+        switch (action) {
+            case 'add':
+                product.quantity += Number(quantity);
+                break;
+            case 'subtract':
+                product.quantity = Math.max(0, product.quantity - Number(quantity));
+                break;
+            case 'set':
+            default:
+                product.quantity = Number(quantity);
+                break;
+        }
+
+        await product.save();
+
+        res.json({
+            message: 'Stock updated successfully',
+            product
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
 // Delete product
 export const deleteProduct = async (req, res) => {
     try {

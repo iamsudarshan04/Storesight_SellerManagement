@@ -429,6 +429,86 @@
     color: #ef4444 !important;
 }
 
+/* ===== Store Link Card ===== */
+.set-store-link-card {
+    background: linear-gradient(135deg, #f0f0ff 0%, #e8f4ff 100%);
+    border: 1px solid #c7d2fe;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.set-store-link-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.set-store-link-icon {
+    font-size: 1.5rem;
+}
+
+.set-store-link-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #1e293b;
+}
+
+.set-store-link-header p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.set-store-link-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.set-store-url {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8rem;
+    color: #6366f1;
+    word-break: break-all;
+    font-family: 'Courier New', monospace;
+}
+
+.set-copy-btn {
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    padding: 0.625rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.15s ease;
+}
+
+.set-copy-btn:hover {
+    transform: scale(1.03);
+}
+
+.set-preview-link {
+    font-size: 0.85rem;
+    color: #6366f1;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.set-preview-link:hover {
+    text-decoration: underline;
+}
+
 /* ===== Theme Options ===== */
 .theme-options {
     display: flex;

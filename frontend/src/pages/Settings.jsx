@@ -14,9 +14,14 @@ const Settings = () => {
         name: '',
         email: '',
         phone: '',
-        businessName: ''
+        businessName: '',
+        storeSlug: '',
+        storeDescription: '',
+        whatsappNumber: '',
+        storeActive: true
     });
     const [profileLoading, setProfileLoading] = useState(true);
+    const [linkCopied, setLinkCopied] = useState(false);
 
     // Password state
     const [passwords, setPasswords] = useState({
@@ -49,6 +54,7 @@ const Settings = () => {
 
     const tabs = [
         { id: 'profile', label: 'Profile', icon: '👤' },
+        { id: 'store', label: 'My Store', icon: '🏪' },
         { id: 'notifications', label: 'Notifications', icon: '🔔' },
         { id: 'security', label: 'Security', icon: '🔒' },
         { id: 'preferences', label: 'Preferences', icon: '⚙️' },
@@ -74,7 +80,11 @@ const Settings = () => {
                 name: response.data.name || '',
                 email: response.data.email || '',
                 phone: response.data.phone || '',
-                businessName: response.data.businessName || ''
+                businessName: response.data.businessName || '',
+                storeSlug: response.data.storeSlug || '',
+                storeDescription: response.data.storeDescription || '',
+                whatsappNumber: response.data.whatsappNumber || '',
+                storeActive: response.data.storeActive !== false
             });
         } catch (error) {
             console.error('Failed to fetch profile:', error);
@@ -109,7 +119,10 @@ const Settings = () => {
             const response = await axiosInstance.patch('/user/profile', {
                 name: profile.name,
                 phone: profile.phone,
-                businessName: profile.businessName
+                businessName: profile.businessName,
+                storeDescription: profile.storeDescription,
+                whatsappNumber: profile.whatsappNumber,
+                storeActive: profile.storeActive
             });
 
             // Update auth context with new name
@@ -296,6 +309,127 @@ const Settings = () => {
                                         {saving ? 'Saving...' : 'Save Changes'}
                                     </button>
                                 </form>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ===== MY STORE ===== */}
+                    {activeTab === 'store' && (
+                        <div className="settings-section">
+                            <h3>My Store</h3>
+
+                            {profileLoading ? (
+                                <div className="set-loading">Loading store settings...</div>
+                            ) : (
+                                <div>
+                                    {/* Shareable Link */}
+                                    {profile.storeSlug && (
+                                        <div className="set-store-link-card">
+                                            <div className="set-store-link-header">
+                                                <span className="set-store-link-icon">🔗</span>
+                                                <div>
+                                                    <h4>Your Store Link</h4>
+                                                    <p>Share this with your customers</p>
+                                                </div>
+                                            </div>
+                                            <div className="set-store-link-row">
+                                                <code className="set-store-url">
+                                                    {window.location.origin}/store/{profile.storeSlug}
+                                                </code>
+                                                <button
+                                                    className="set-copy-btn"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(`${window.location.origin}/store/${profile.storeSlug}`);
+                                                        setLinkCopied(true);
+                                                        setTimeout(() => setLinkCopied(false), 2000);
+                                                    }}
+                                                >
+                                                    {linkCopied ? '✅ Copied!' : '📋 Copy'}
+                                                </button>
+                                            </div>
+                                            <a
+                                                href={`/store/${profile.storeSlug}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="set-preview-link"
+                                            >
+                                                👁️ Preview your store →
+                                            </a>
+                                        </div>
+                                    )}
+
+                                    {/* Store Active Toggle */}
+                                    <div className="notification-item" style={{ paddingTop: '1rem' }}>
+                                        <div className="notification-info">
+                                            <h4>Store Active</h4>
+                                            <p>Turn off to hide your store from customers</p>
+                                        </div>
+                                        <label className="toggle">
+                                            <input
+                                                type="checkbox"
+                                                checked={profile.storeActive}
+                                                onChange={() => setProfile(p => ({ ...p, storeActive: !p.storeActive }))}
+                                            />
+                                            <span className="slider"></span>
+                                        </label>
+                                    </div>
+
+                                    <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                                        <label htmlFor="set-store-desc">Store Description</label>
+                                        <textarea
+                                            id="set-store-desc"
+                                            value={profile.storeDescription}
+                                            onChange={(e) => setProfile(p => ({ ...p, storeDescription: e.target.value }))}
+                                            placeholder="We sell handmade earrings & accessories ✨"
+                                            rows="3"
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '8px',
+                                                fontSize: '0.95rem',
+                                                fontFamily: 'inherit',
+                                                resize: 'vertical',
+                                                boxSizing: 'border-box'
+                                            }}
+                                        />
+                                        <span className="set-help-text">This shows at the top of your store page</span>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label htmlFor="set-whatsapp">WhatsApp Number</label>
+                                        <input
+                                            id="set-whatsapp"
+                                            type="tel"
+                                            value={profile.whatsappNumber}
+                                            onChange={(e) => setProfile(p => ({ ...p, whatsappNumber: e.target.value }))}
+                                            placeholder="9876543210"
+                                        />
+                                        <span className="set-help-text">Customers will contact you on this number</span>
+                                    </div>
+
+                                    <button
+                                        className="btn-save"
+                                        disabled={saving}
+                                        onClick={async () => {
+                                            setSaving(true);
+                                            try {
+                                                await axiosInstance.patch('/user/profile', {
+                                                    storeDescription: profile.storeDescription,
+                                                    whatsappNumber: profile.whatsappNumber,
+                                                    storeActive: profile.storeActive
+                                                });
+                                                showToast('Store settings saved!');
+                                            } catch (err) {
+                                                showToast('Failed to save store settings', 'error');
+                                            } finally {
+                                                setSaving(false);
+                                            }
+                                        }}
+                                    >
+                                        {saving ? 'Saving...' : 'Save Store Settings'}
+                                    </button>
+                                </div>
                             )}
                         </div>
                     )}

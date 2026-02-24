@@ -16,6 +16,7 @@ import Inventory from './pages/Inventory';
 import Payments from './pages/Payments';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import StoreFront from './pages/StoreFront';
 
 import './App.css';
 
@@ -28,6 +29,7 @@ function App() {
                         {/* Public Routes */}
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
+                        <Route path="/store/:slug" element={<StoreFront />} />
 
                         {/* Protected Routes with MainLayout */}
                         <Route path="/dashboard" element={

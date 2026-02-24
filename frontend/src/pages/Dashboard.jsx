@@ -56,13 +56,15 @@ const Dashboard = () => {
         <div className="dashboard">
             <div className="dashboard-grid">
                 {/* 1. This Month Revenue */}
+
                 <DashboardCard
                     title="Total Sales (This Month)"
-                    value={formatCurrency(metrics.revenue.value)}
+                    value={`₹${metrics.revenue.value.toLocaleString('en-IN')}`}
                     icon="💰"
                     trend={metrics.revenue.trend}
                     color="blue"
                 />
+
 
                 {/* 2. Total Orders */}
                 <DashboardCard

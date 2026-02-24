@@ -29,26 +29,61 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Password is required'],
         minlength: 6
     },
+    // Store front fields
+    storeSlug: {
+        type: String,
+        unique: true,
+        sparse: true,
+        lowercase: true,
+        trim: true
+    },
+    storeDescription: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    whatsappNumber: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    storeActive: {
+        type: Boolean,
+        default: true
+    },
     createdAt: {
         type: Date,
         default: Date.now
     }
 });
 
-// Hash password before saving
+// Auto-generate store slug from name before first save
 userSchema.pre('save', async function () {
     try {
+        // Generate slug if not set
+        if (!this.storeSlug && this.name) {
+            let baseSlug = this.name.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
+
+            // Check for uniqueness
+            let slug = baseSlug;
+            let counter = 1;
+            while (await mongoose.model('User').findOne({ storeSlug: slug, _id: { $ne: this._id } })) {
+                slug = `${baseSlug}-${counter}`;
+                counter++;
+            }
+            this.storeSlug = slug;
+        }
+
+        // Hash password
         if (!this.isModified('password')) return;
 
-        console.log('Hashing password...');
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
-        console.log('Password hashed successfully');
     } catch (error) {
-        console.error('Password hashing error:', error);
-        // Mongoose handles errors thrown in async pre-hooks automatically
-        // No need to call next(error) explicitly
-        throw error; // Re-throw the error to let Mongoose handle it
+        console.error('User pre-save error:', error);
+        throw error;
     }
 });
 

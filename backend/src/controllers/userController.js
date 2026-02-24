@@ -7,12 +7,22 @@ export const getProfile = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
+
+        // Auto-generate slug for existing users who don't have one
+        if (!user.storeSlug) {
+            await user.save();
+        }
+
         res.json({
             id: user._id,
             name: user.name,
             email: user.email,
             phone: user.phone || '',
             businessName: user.businessName || '',
+            storeSlug: user.storeSlug || '',
+            storeDescription: user.storeDescription || '',
+            whatsappNumber: user.whatsappNumber || '',
+            storeActive: user.storeActive !== false,
             createdAt: user.createdAt
         });
     } catch (error) {
@@ -24,7 +34,7 @@ export const getProfile = async (req, res) => {
 // Update profile
 export const updateProfile = async (req, res) => {
     try {
-        const { name, phone, businessName } = req.body;
+        const { name, phone, businessName, storeDescription, whatsappNumber, storeActive } = req.body;
 
         const user = await User.findById(req.userId);
         if (!user) {
@@ -34,6 +44,9 @@ export const updateProfile = async (req, res) => {
         if (name) user.name = name.trim();
         if (phone !== undefined) user.phone = phone.trim();
         if (businessName !== undefined) user.businessName = businessName.trim();
+        if (storeDescription !== undefined) user.storeDescription = storeDescription.trim();
+        if (whatsappNumber !== undefined) user.whatsappNumber = whatsappNumber.trim();
+        if (storeActive !== undefined) user.storeActive = storeActive;
 
         await user.save();
 
@@ -44,7 +57,11 @@ export const updateProfile = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 phone: user.phone || '',
-                businessName: user.businessName || ''
+                businessName: user.businessName || '',
+                storeSlug: user.storeSlug || '',
+                storeDescription: user.storeDescription || '',
+                whatsappNumber: user.whatsappNumber || '',
+                storeActive: user.storeActive !== false
             }
         });
     } catch (error) {

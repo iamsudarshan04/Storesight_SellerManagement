@@ -17,6 +17,8 @@ import Payments from './pages/Payments';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import StoreFront from './pages/StoreFront';
+import OrderTracking from './pages/OrderTracking';
+import StoreCustomization from './pages/StoreCustomization';
 
 import './App.css';
 
@@ -30,6 +32,7 @@ function App() {
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
                         <Route path="/store/:slug" element={<StoreFront />} />
+                        <Route path="/track/:orderId" element={<OrderTracking />} />
 
                         {/* Protected Routes with MainLayout */}
                         <Route path="/dashboard" element={
@@ -108,6 +111,14 @@ function App() {
                             <ProtectedRoute>
                                 <MainLayout pageTitle="Settings">
                                     <Settings />
+                                </MainLayout>
+                            </ProtectedRoute>
+                        } />
+
+                        <Route path="/store-editor" element={
+                            <ProtectedRoute>
+                                <MainLayout pageTitle="Store Customization">
+                                    <StoreCustomization />
                                 </MainLayout>
                             </ProtectedRoute>
                         } />

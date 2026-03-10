@@ -51,6 +51,19 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    themeColor: {
+        type: String,
+        trim: true,
+        default: '#6366f1'
+    },
+    showWhatsapp: {
+        type: Boolean,
+        default: true
+    },
+    storeLogo: {
+        type: String,
+        default: ''
+    },
     createdAt: {
         type: Date,
         default: Date.now

@@ -23,6 +23,9 @@ export const getProfile = async (req, res) => {
             storeDescription: user.storeDescription || '',
             whatsappNumber: user.whatsappNumber || '',
             storeActive: user.storeActive !== false,
+            themeColor: user.themeColor || '#6366f1',
+            showWhatsapp: user.showWhatsapp !== false,
+            storeLogo: user.storeLogo || '',
             createdAt: user.createdAt
         });
     } catch (error) {
@@ -34,7 +37,7 @@ export const getProfile = async (req, res) => {
 // Update profile
 export const updateProfile = async (req, res) => {
     try {
-        const { name, phone, businessName, storeDescription, whatsappNumber, storeActive } = req.body;
+        const { name, phone, businessName, storeDescription, whatsappNumber, storeActive, themeColor, showWhatsapp, storeLogo } = req.body;
 
         const user = await User.findById(req.userId);
         if (!user) {
@@ -47,6 +50,9 @@ export const updateProfile = async (req, res) => {
         if (storeDescription !== undefined) user.storeDescription = storeDescription.trim();
         if (whatsappNumber !== undefined) user.whatsappNumber = whatsappNumber.trim();
         if (storeActive !== undefined) user.storeActive = storeActive;
+        if (themeColor !== undefined) user.themeColor = themeColor.trim();
+        if (showWhatsapp !== undefined) user.showWhatsapp = showWhatsapp;
+        if (storeLogo !== undefined) user.storeLogo = storeLogo;
 
         await user.save();
 
@@ -61,7 +67,10 @@ export const updateProfile = async (req, res) => {
                 storeSlug: user.storeSlug || '',
                 storeDescription: user.storeDescription || '',
                 whatsappNumber: user.whatsappNumber || '',
-                storeActive: user.storeActive !== false
+                storeActive: user.storeActive !== false,
+                themeColor: user.themeColor || '#6366f1',
+                showWhatsapp: user.showWhatsapp !== false,
+                storeLogo: user.storeLogo || ''
             }
         });
     } catch (error) {
